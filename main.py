@@ -1,4 +1,3 @@
-from operator import truediv
 import os
 import sys
 import time
@@ -86,25 +85,22 @@ def update(snake, board):
         os.system('cls')
         sys.exit()
 
-
-
-
 def clear_screen():
     print('')
     print('\033[' + str(SCREEN_HEIGHT + 4) + 'A\033[2K', end='')
+
 
 def main():
     os.system('cls')
     os.system('mode con: cols=80 lines=40')
     snake = Snake()
     board = Board()
-
-
     while True:
         clear_screen()
         update(snake, board)
         board.draw()
         time.sleep(0.05)
-                        
+
+                       
 if __name__ == "__main__":
     main()
