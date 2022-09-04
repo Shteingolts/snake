@@ -11,7 +11,6 @@ SCREEN_WIDTH = 20
 SCREEN_HEIGHT = 20
 MAX_FOOD = 10
 
-
 class Snake():
     def __init__(
                 self,
@@ -24,15 +23,15 @@ class Snake():
         self.draw_state = [[10, 10], [10, 9], [10, 8], [10, 7], [10, 6]]
         self.body = [[10, 10], [10, 9], [10, 8], [10, 7], [10, 6]]
 
-    def draw_on_board(self, Board):
-        self.clear_snake(Board)
+    def draw_on_board(self, board):
+        self.clear_snake(board)
         for snake_part in self.draw_state:
-            Board.board[round(snake_part[0])
+            board.board[round(snake_part[0])
                         ][round(snake_part[1])] = '@ '
 
-    def clear_snake(self, Board):
+    def clear_snake(self, board):
         for snake_part in self.draw_state:
-            Board.board[round(snake_part[0])][round(snake_part[1])] = '. '
+            board.board[round(snake_part[0])][round(snake_part[1])] = '. '
 
     def update_direction(self):
         if keyboard.is_pressed('right'):
@@ -78,7 +77,19 @@ class Snake():
             self.points += 1
             board.food.remove((round(self.body[0][0]), round(self.body[0][1])))
 
+            tail_part = copy.deepcopy(self.draw_state[-1])
+            tail_adjacent_cells = [
+                (tail_part[0] + 1,tail_part[0]),
+                (tail_part[0] - 1,tail_part[0]),
+                (tail_part[0],tail_part[0] + 1),
+                (tail_part[0],tail_part[0] - 1)]
+            
+            while True:
+                random_grow = random.choice(tail_adjacent_cells)
+                if random_grow not in self.draw_state:
+                    break
 
+            self.draw_state.append(random_grow)
 
 class Board():
     def __init__(self, width=SCREEN_WIDTH, height=SCREEN_HEIGHT) -> None:
@@ -96,7 +107,7 @@ class Board():
             self.food.append((x, y))
             self.board[x][y] = 'X '
 
-    def draw(self, snake):
+    def draw(self, snake, dt):
         to_draw = ''
         to_draw = to_draw + '--' * (self.width+1)
 
@@ -106,9 +117,8 @@ class Board():
                 to_draw = to_draw + cell
 
         to_draw = to_draw + '\n' + ('--' * (self.width+1)) + '\n'
-        to_draw = to_draw + (f'draw: {snake.draw_state}')
+        to_draw = to_draw + (f'Score: {snake.points}')
         print(to_draw)
-
 
 def update(snake: Snake, board: Board, dt):
     board.spawn_food()
@@ -140,6 +150,7 @@ def main():
         start_time = time.time()
         clear_screen()
         update(snake, board, dt)
+        
         not_over = snake.check_collision(board)
         if not not_over:
             os.system('cls')
@@ -148,10 +159,7 @@ def main():
             print(f'Points: {snake.points}')
             break
 
-        board.draw(snake)
-
-    
-
+        board.draw(snake, dt)
 
 if __name__ == "__main__":
     main()
