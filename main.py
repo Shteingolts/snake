@@ -1,59 +1,83 @@
 import os
 import sys
 import time
-import keyboard
 import random
+import keyboard
+import copy
 
 FPS = 30
-SNAKE_SPEED = 400
+SNAKE_SPEED = 3
 SCREEN_WIDTH = 20
 SCREEN_HEIGHT = 20
 MAX_FOOD = 10
 
 
 class Snake():
-    def __init__(self, x_coord=10, y_coord=10, direction='right', speed=SNAKE_SPEED, points=0) -> None:
-        self.x = x_coord
-        self.y = y_coord
+    def __init__(
+                self,
+                direction='right',
+                speed=SNAKE_SPEED,
+                points=0) -> None:
         self.direction = direction
         self.speed = speed
         self.points = points
-        self.body = []
+        self.draw_state = [[10, 10], [10, 9], [10, 8], [10, 7], [10, 6]]
+        self.body = [[10, 10], [10, 9], [10, 8], [10, 7], [10, 6]]
 
     def draw_on_board(self, Board):
-        if 0 <= self.x <= Board.width*100 and 0 <= self.y <= Board.height*100:
-            Board.board[round(self.x / 100)][round(self.y / 100)] = '@ '
-        for snake_part in self.body:
-            Board.board[round(snake_part[0] / 100)
-                        ][round(snake_part[1] / 100)] = '@ '
+        self.clear_snake(Board)
+        for snake_part in self.draw_state:
+            Board.board[round(snake_part[0])
+                        ][round(snake_part[1])] = '@ '
 
-    def clear_tail(self, Board):
-        if len(self.body) == 0:
-            Board.board[round(self.x / 100)][round(self.y / 100)] = '. '
-        else:
-            Board.board[self.body[-1][0]][self.body[-1][1]] = '. '
+    def clear_snake(self, Board):
+        for snake_part in self.draw_state:
+            Board.board[round(snake_part[0])][round(snake_part[1])] = '. '
 
-    def move(self, Board, dt):
-        y_max = Board.width * 100
-        x_max = Board.height * 100
+    def update_direction(self):
+        if keyboard.is_pressed('right'):
+            self.direction = 'right'
+        if keyboard.is_pressed('left'):
+            self.direction = 'left'
+        if keyboard.is_pressed('up'):
+            self.direction = 'up'
+        if keyboard.is_pressed('down'):
+            self.direction = 'down'
 
-        if self.direction == 'right' and self.y < y_max:
-            self.y = self.y + self.speed * dt
-        if self.direction == 'left' and 0 < self.y:
-            self.y = self.y - self.speed * dt
-        if self.direction == 'up' and 0 < self.x:
-            self.x = self.x - self.speed * dt
-        if self.direction == 'down' and self.x < x_max:
-            self.x = self.x + self.speed * dt
+    def move(self, board, dt):
+        y_max = board.width
+        x_max = board.height
 
-        if self.y > y_max:
-            self.y = y_max
-        if self.y < 0:
-            self.y = 0
-        if self.x > x_max:
-            self.x = x_max
-        if self.x < 0:
-            self.x = 0
+        body_copy = copy.deepcopy(self.draw_state)
+        previous_position = (body_copy[0][0], body_copy[0][1])
+
+        if self.direction == 'right' and self.body[0][1] < y_max:
+            self.body[0][1] = self.body[0][1] + self.speed * dt # [10.01, 10.01]
+        if self.direction == 'left' and 0 < self.body[0][1]:
+            self.body[0][1] = self.body[0][1] - self.speed * dt
+        if self.direction == 'up' and 0 < self.body[0][0]:
+            self.body[0][0] = self.body[0][0] - self.speed * dt
+        if self.direction == 'down' and self.body[0][0] < x_max:
+            self.body[0][0] = self.body[0][0] + self.speed * dt
+
+        if round(previous_position[0]) != round(self.body[0][0]) or round(previous_position[1]) != round(self.body[0][1]):
+            new_head = (round(copy.copy(self.body[0][0])), round(copy.copy(self.body[0][1])))
+            self.draw_state = body_copy[:-1]
+            # self.draw_state.insert(0, self.body[0])
+            self.draw_state.insert(0, new_head)
+
+    def check_collision(self, board):
+        if self.draw_state[0] in self.draw_state[1:]:
+            return False
+        if self.body[0][0] > board.height or self.body[0][1] > board.width:
+            return False
+        return True
+    
+    def update_on_food(self, board):
+        if (round(self.body[0][0]), round(self.body[0][1])) in board.food:
+            self.points += 1
+            board.food.remove((round(self.body[0][0]), round(self.body[0][1])))
+
 
 
 class Board():
@@ -66,13 +90,13 @@ class Board():
                       for m in range(self.height + 1)]
 
     def spawn_food(self):
-        while len(self.food) < 10:
+        if len(self.food) < 10:
             x = random.randint(0, self.width)
             y = random.randint(0, self.height)
             self.food.append((x, y))
             self.board[x][y] = 'X '
 
-    def draw(self, snake, dt):
+    def draw(self, snake):
         to_draw = ''
         to_draw = to_draw + '--' * (self.width+1)
 
@@ -82,28 +106,15 @@ class Board():
                 to_draw = to_draw + cell
 
         to_draw = to_draw + '\n' + ('--' * (self.width+1)) + '\n'
-        to_draw = to_draw + (f'Points: {snake.points}')
+        to_draw = to_draw + (f'draw: {snake.draw_state}')
         print(to_draw)
 
 
-def update(snake, board, dt):
-
+def update(snake: Snake, board: Board, dt):
     board.spawn_food()
-
-    if keyboard.is_pressed('right'):
-        snake.direction = 'right'
-    if keyboard.is_pressed('left'):
-        snake.direction = 'left'
-    if keyboard.is_pressed('up'):
-        snake.direction = 'up'
-    if keyboard.is_pressed('down'):
-        snake.direction = 'down'
-
-    if (round(snake.x / 100), round(snake.y / 100)) in board.food:
-        snake.points += 1
-        board.food.remove((round(snake.x / 100), round(snake.y / 100)))
-
-    snake.clear_tail(board)
+    snake.clear_snake(board)
+    snake.update_direction()
+    snake.update_on_food(board)
     snake.move(board, dt)
     snake.draw_on_board(board)
 
@@ -111,10 +122,10 @@ def update(snake, board, dt):
         os.system('cls')
         sys.exit()
 
-
 def clear_screen():
     print('')
     print('\033[' + str(SCREEN_HEIGHT + 7) + 'A\033[2K', end='')
+    print('\033[?25l', end="")
 
 
 def main():
@@ -129,7 +140,17 @@ def main():
         start_time = time.time()
         clear_screen()
         update(snake, board, dt)
-        board.draw(snake, dt)
+        not_over = snake.check_collision(board)
+        if not not_over:
+            os.system('cls')
+            print('\n' * (SCREEN_HEIGHT - 1))
+            print('GAME OVER')
+            print(f'Points: {snake.points}')
+            break
+
+        board.draw(snake)
+
+    
 
 
 if __name__ == "__main__":
