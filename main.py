@@ -78,14 +78,15 @@ class Snake():
             board.food.remove((round(self.body[0][0]), round(self.body[0][1])))
 
             tail_part = copy.deepcopy(self.draw_state[-1])
-            tail_adjacent_cells = [
-                (tail_part[0] + 1,tail_part[0]),
-                (tail_part[0] - 1,tail_part[0]),
-                (tail_part[0],tail_part[0] + 1),
-                (tail_part[0],tail_part[0] - 1)]
-            
+
             while True:
-                random_grow = random.choice(tail_adjacent_cells)
+                value = random.choice((-1, 1))
+                coordinate = random.choice(('x', 'y'))
+                if coordinate == 'x':
+                    random_grow = (tail_part[0] + value, tail_part[1])
+                else:
+                    random_grow = (tail_part[0] + value, tail_part[1])
+
                 if random_grow not in self.draw_state:
                     break
 
