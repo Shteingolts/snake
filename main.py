@@ -68,7 +68,10 @@ class Snake():
     def check_collision(self, board):
         if self.draw_state[0] in self.draw_state[1:]:
             return False
-        if self.body[0][0] > board.height or self.body[0][1] > board.width:
+        if (self.body[0][0] > board.height)\
+            or (self.body[0][0] < 0)\
+            or (self.body[0][1] > board.width)\
+            or (self.body[0][1] < 0):
             return False
         return True
     
