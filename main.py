@@ -141,7 +141,6 @@ def clear_screen():
     print('\033[' + str(SCREEN_HEIGHT + 7) + 'A\033[2K', end='')
     print('\033[?25l', end="")
 
-
 def main():
     os.system('cls')
     os.system('mode con: cols=80 lines=40')
